@@ -1,0 +1,126 @@
+<html>
+<head>
+    <title>Gotta Catch Em All!</title>
+    <style>
+        #pokemonDetail {
+            display: none;
+            border: 1px solid #000000;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            max-width: 200px;
+            text-align: center;
+        }
+        #pokemonDetail img {
+            max-width: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Pokemon Viewer</h1>
+    <select id="pokemonList"></select>
+    <div id="pokemonDetail"></div>
+
+    <script>
+        // Get the full list of Pokemon from the pokeapi.co website.
+        function getPokemonList() {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200)
+                    {
+                        var response = JSON.parse(xhr.responseText);
+                        displayPokemonList(response.results);
+                    } 
+                    else {
+                        console.error('Failed to fetch Pokemon list:', xhr.status);
+                    }
+                }
+            };
+            xhr.open('GET', 'https://pokeapi.co/api/v2/pokemon?limit=151', true);
+            xhr.send();
+        }
+
+        // Display the entire Pokemon list as a drop down.
+        function displayPokemonList(pokemon) {
+            var select = document.getElementById('pokemonList');
+
+            // Add "Select a Pokemon" as the first option.
+            var defaultOption = document.createElement('option');
+            defaultOption.textContent = 'Select a Pokemon';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            select.appendChild(defaultOption);
+
+            pokemon.forEach(function (poke, index) {
+                var option = document.createElement('option');
+                option.value = index + 1; 
+                option.textContent = formatName(poke.name);
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', function () {
+                var selectedId = parseInt(this.value);
+                
+                // Check if a valid option is selected.
+                if (!isNaN(selectedId)) { 
+                    getPokemonDetails(selectedId);
+                }
+                else
+                {
+                    // Reset the view if "Select a Pokemon" is selected.
+                    resetDetailView();
+                }
+            });
+        }
+
+        // Make the name pretty.
+        function formatName(name) {
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        }
+
+        // Get the details of the Pokemon.
+        function getPokemonDetails(id) {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        var pokemon = JSON.parse(xhr.responseText);
+                        displayPokemonDetails(pokemon);
+                    }
+                    else {
+                        console.error('Failed to fetch Pokemon details:', xhr.status);
+                    }
+                }
+            };
+            xhr.open('GET', 'https://pokeapi.co/api/v2/pokemon/' + id, true);
+            xhr.send();
+        }
+
+        // Display the details of each Pokemon in human readable format.
+        function displayPokemonDetails(pokemon) {
+            var detailDiv = document.getElementById('pokemonDetail');
+            detailDiv.style.display = 'block';
+            detailDiv.innerHTML = `
+                <h2>${formatName(pokemon.name)}</h2>
+                <img src="${pokemon.sprites.front_default}" alt="${pokemon.name}">
+                <p><i>Pokedex #:</i> ${pokemon.id}</p>
+                <p><i>Type(s):</i> ${pokemon.types.map(function (type) {
+                    return formatName(type.type.name);
+                }).join(', ')}</p>
+            `;
+        }
+
+        // Clear stuff to start over.
+        function resetDetailView() {
+            var detailDiv = document.getElementById('pokemonDetail');
+            detailDiv.style.display = 'none';
+            detailDiv.innerHTML = ''; 
+        }
+
+        // Make it so.
+        getPokemonList();
+    </script>
+</body>
+</html>
